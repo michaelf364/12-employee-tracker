@@ -117,7 +117,7 @@ async function rolesMenu() {
     case "View All Roles":
       viewAllRoles();
       break;
-    case "View Employees By Manager":
+    case "Add Roles":
       addRoles();
       break;
     case "Delete Roles":
@@ -158,7 +158,7 @@ async function departmentsMenu() {
 }
 
 function viewAllDepartments() {
-  connection.query("SELECT * FROM department", function (err, results) {
+  connection.query("SELECT * FROM departments", function (err, results) {
     console.table(results);
 
     departmentsMenu();
@@ -168,10 +168,25 @@ function viewAllDepartments() {
 function addDepartment() {
   inquirer.prompt({
     type: "input",
-    message: "What Depatment would you like to add?",
+    message: "What Department would you like to add?",
     name: "department"
   }).then(function (answer) {
-    let query = "INSERT INTO department (dept_id) VALUES ('" + answer.department + "')";
+    let query = "INSERT INTO departments (name) VALUES ('" + answer.department + "')";
+    connection.query(query, function (err, results) {
+      departmentsMenu();
+    })
+  })
+}
+
+function deleteDepartment() {
+  connection.query("SELECT * FROM departments", function (err, results) {
+    console.table(results);
+  inquirer.prompt({
+    type: "input",
+    message: "What Department would you like to delete?",
+    name: "department"
+  }).then(function (answer) {
+    let query = "DELETE FROM departments WHERE name=('" + answer.department + "')";
     connection.query(query, function (err, results) {
       departmentsMenu();
     })
