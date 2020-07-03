@@ -29,3 +29,12 @@ PRIMARY KEY (id),
 FOREIGN KEY (role_id) REFERENCES roles(id),
 FOREIGN KEY (manager_id) REFERENCES employees(id)
 );
+
+INSERT INTO departments (name) values ('testing');
+INSERT INTO departments (name) values ('development');
+
+INSERT INTO roles (title, salary) values ('tester', 10000);
+INSERT INTO roles (title, salary) values ('developer', 20000);
+
+INSERT INTO employees (first_name, last_name) values ('tester', 'testerson');
+INSERT INTO employees (first_name, last_name) values ('developer', 'developerson');
