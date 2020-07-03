@@ -97,18 +97,28 @@ function viewAllEmployees() {
   })
 }
 
-async function rolesMenu() {
-  const response = await inquirer.prompt({
-    type: "list",
-    name: "action",
-    message: "What would you like to do?",
-    choices: ["View All Roles",
-      "Add Roles",
-      "Delete Roles",
-      "Return"
-    ]
-  })
+function addEmployee() {
+  
+}
 
+function deleteEmployee(){
+  
+}
+
+async function rolesMenu() {
+  const prompts = [
+    {
+      type: "list",
+      name: "action",
+      message: "What would you like to do?",
+      choices: ["View All Roles",
+        "Add Roles",
+        "Delete Roles",
+        "Return"
+      ]
+    }
+  ];
+  const response = await inquirer.prompt(prompts);
   switch (response.action) {
     case "View All Roles":
       viewAllRoles();
@@ -125,6 +135,7 @@ async function rolesMenu() {
   }
 }
 
+//select all roles
 function viewAllRoles() {
   const query = "SELECT * FROM roles";
   connection.query(query, function (err, results) {
@@ -138,91 +149,82 @@ function viewAllRoles() {
 }
 
 function addRoles() {
-  const departments = [];
-  let departmentList = [];
   const query = "SELECT * FROM departments";
-  connection.query(query, function (err, results) {
+  connection.query(query, async function (err, results) {
     if (err) {
       throw err;
     }
-    departmentList = results;
-    for (let i = 0; i < results.length; i++) {
-      departments.push(results[i].name);
-    }
-  });
-  let prompts = [
-    {
-      type: "input",
-      message: "What Role do you want to add?",
-      name: "role"
-    },
-    {
-      type: "input",
-      message: "What is the Salary for this Role?",
-      name: "salary"
-    },
-    {
-      type: "list",
-      message: "Please select the department for this Role.",
-      choices: departments,
-      name: "department"
-    }
-  ];
-  inquirer.prompt(prompts)
-    .then(function (answer) {
-      const departmentID = departmentList.filter(record => {
-        return record.name == answer.department;
-      })
-      const query = `INSERT INTO roles (title, salary, department_id) VALUES ('${answer.role}', '${answer.salary}', '${departmentID[0].id}')`;
-      connection.query(query, function (err, results) {
-        if(err){
-          throw err;
-        }
-        rolesMenu();
-      })
-    })
-}
-
-function deleteRoles() {
-  const roles = [];
-  let rolesList = [];
-  const query = "SELECT * FROM roles";
-  connection.query(query, function (err, results) {
-    if (err) {
-      throw err;
-    }
-    rolesList = results;
-    for (let i = 0; i < results.length; i++) {
-      roles.push(results[i].name);
-    }
-  });
-  inquirer.prompt({
-    type: "list",
-    message: "What role would you like to delete?",
-    choices: roles,
-    name: "role"
-  }).then(function (answer) {
-    let query = `DELETE FROM roles WHERE name=('${answer.role}')`;
-    connection.query(query, function (err, results) {
-      if(err){
-        throw err;
+    const departments = results.map(a => a.name);
+    const prompts = [
+      {
+        type: "input",
+        message: "What Role do you want to add?",
+        name: "role"
+      },
+      {
+        type: "input",
+        message: "What is the Salary for this Role?",
+        name: "salary"
+      },
+      {
+        type: "list",
+        message: "Please select the department for this Role.",
+        choices: departments,
+        name: "department"
+      }
+    ];
+    const response = await inquirer.prompt(prompts)
+    const index = departments.indexOf(response.department);
+    const query1 = `INSERT INTO roles (title, salary, department_id) VALUES ('${response.role}', '${response.salary}', '${results[index].id}')`;
+    connection.query(query1, function (err1, results1) {
+      if (err1) {
+        throw err1;
       }
       rolesMenu();
     })
   })
 }
 
-async function departmentsMenu() {
-  const response = await inquirer.prompt({
-    type: "list",
-    name: "action",
-    message: "What would you like to do?",
-    choices: ["View All Departments",
-      "Add Departments",
-      "Delete Departments",
-      "Return"
+
+//deletes role based on user input
+function deleteRoles() {
+  connection.query("SELECT * FROM roles", async function (err, res) {
+    if (err) throw err;
+    const roles = res.map(a => a.title);
+    const prompts = [
+      {
+        type: "list",
+        name: "role",
+        message: "Which role would you like to delete?",
+        choices: roles
+      }
     ]
+    const response = await inquirer.prompt(prompts)
+
+    const index = roles.indexOf(response.role);
+
+    connection.query(`DELETE FROM roles WHERE id = '${res[index].id}'`, function (err2, res2) {
+      if (err2) throw err2;
+      console.log(`${response.role} role was successfully deleted.`);
+      roleMenu();
+    });
   })
+}
+
+async function departmentsMenu() {
+  const prompts = [
+    {
+      type: "list",
+      name: "action",
+      message: "What would you like to do?",
+      choices: ["View All Departments",
+        "Add Departments",
+        "Delete Departments",
+        "Return"
+      ]
+    }
+  ]
+  const response = await inquirer.prompt(prompts)
 
   switch (response.action) {
     case "View All Departments":
@@ -248,6 +250,7 @@ function viewAllDepartments() {
     departmentsMenu();
   })
 }
+
 // inserts into the departments table a name of your choice
 function addDepartment() {
   inquirer.prompt({
@@ -257,6 +260,9 @@ function addDepartment() {
   }).then(function (answer) {
     let query = `INSERT INTO departments (name) VALUES ('${answer.department}')`;
     connection.query(query, function (err, results) {
+      if (err) {
+        throw err;
+      }
       departmentsMenu();
     })
   })
@@ -264,23 +270,26 @@ function addDepartment() {
 
 
 function deleteDepartment() {
-  connection.query("SELECT * FROM departments", function (err, results) {
-    if(err){
+  connection.query("SELECT name FROM departments;", async function (err, res) {
+    if (err) {
       throw err;
     }
-    console.table(results);
-  })
-  inquirer.prompt({
-    type: "input",
-    message: "What Department would you like to delete?",
-    name: "department"
-  }).then(function (answer) {
-    let query = `DELETE FROM departments WHERE name=('${answer.department}')`;
-    connection.query(query, function (err, results) {
-      if(err){
-        throw err;
+    const departments = res.map(a => a.name);
+    const prompts = [
+      {
+        type: "list",
+        name: "department",
+        message: "Which department would you like to delete?",
+        choices: departments
       }
-      departmentsMenu();
+    ]
+    const response = await inquirer.prompt(prompts)
+    connection.query(`DELETE FROM departments WHERE name = '${response.department}';`, function (err2, res2) {
+      if (err2) {
+        throw err2;
+      }
+      console.log("Department successfully deleted.")
+      departmentMenu();
     })
   })
 }
