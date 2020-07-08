@@ -89,10 +89,7 @@ async function employeesMenu() {
 }
 
 function viewAllEmployees() {
-  const query = `SELECT employees.first_name AS First_Name, employees.last_name AS Last_Name, roles.title AS Role, departments.name AS Department, roles.salary As Salary, CONCAT(managers.first_name, " ", managers.last_name) AS Manager FROM employees
-  LEFT JOIN roles ON employees.role_id = roles.id
-  LEFT JOIN departments ON roles.department_id = departments.id
-  LEFT JOIN employees AS managers ON employees.manager_id = managers.id`;
+  const query = `SELECT * FROM employees`;
   connection.query(query, function (err, res) {
     if (err) throw err;
     console.log("Employees:");
@@ -152,16 +149,19 @@ async function deleteEmployee() {
         throw err;
       }
       const employees = res.map(a => a.name);
-      const response = await inquirer.prompt({
-        type: "list",
-        name: "employee",
-        message: "Which employee would you like to delete?",
-        choices: employees
-      })
+      const prompts = [
+        {
+          type: "list",
+          name: "employee",
+          message: "Which employee would you like to delete?",
+          choices: employees
+        }
+      ]
+      const response = await inquirer.prompt(prompts);
 
       const index = employees.indexOf(response.employee);
-
-      connection.query(`DELETE FROM employees WHERE id = '${res[index].id}'`, function (err2, res2) {
+const delQuery = `DELETE FROM employees WHERE id = '${res[index].id}'`;
+      connection.query(delQuery, function (err2, res2) {
         if (err2) {
           throw err2;
         }
@@ -272,7 +272,7 @@ function deleteRoles() {
     connection.query(`DELETE FROM roles WHERE id = '${res[index].id}'`, function (err2, res2) {
       if (err2) throw err2;
       console.log(`${response.role} role was successfully deleted.`);
-      roleMenu();
+      rolesMenu();
     });
   })
 }
@@ -354,8 +354,8 @@ function deleteDepartment() {
       if (err2) {
         throw err2;
       }
-      console.log("Department successfully deleted.")
-      departmentMenu();
+      console.log("Department successfully deleted.");
+      departmentsMenu();
     })
   })
 }
