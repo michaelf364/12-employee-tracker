@@ -23,8 +23,8 @@ connection.connect(function (err) {
 });
 
 function start() {
-  inquirer
-    .prompt({
+  const prompts = [
+    {
       name: "action",
       type: "list",
       message: "What would you like to do?",
@@ -34,7 +34,9 @@ function start() {
         "View Departments Menu",
         "Exit"
       ]
-    })
+    }
+  ]
+  inquirer.prompt(prompts)
     .then(function (answer) {
       switch (answer.action) {
         case "View Employees Menu":
@@ -56,17 +58,19 @@ function start() {
 }
 
 async function employeesMenu() {
-  const response = await inquirer.prompt({
-    type: "list",
-    name: "action",
-    message: "What would you like to do?",
-    choices: ["View All Employees",
-      "View Employees By Manager",
-      "Add Employee",
-      "Delete Employee",
-      "Return"
-    ]
-  })
+  const prompts = [
+    {
+      type: "list",
+      name: "action",
+      message: "What would you like to do?",
+      choices: ["View All Employees",
+        "Add Employee",
+        "Delete Employee",
+        "Return"
+      ]
+    }
+  ]
+  const response = await inquirer.prompt(prompts);
 
   switch (response.action) {
     case "View All Employees":
@@ -98,11 +102,73 @@ function viewAllEmployees() {
 }
 
 function addEmployee() {
-  
+  const query = `SELECT * FROM roles`;//queries the role db for all the roles
+  connection.query(query, async function (err2, roleResult) {
+      if (err2) {
+        throw err2;
+      }
+      const roles = roleResult.map(a => a.title);
+      console.log(roles);
+      const prompts = [
+        {
+          type: "input",
+          name: "first_name",
+          message: "Enter the employees first name"
+        },
+        {
+          type: "input",
+          name: "last_name",
+          message: "Enter the employees last name"
+        },
+        {
+          type: "list",
+          name: "role",
+          message: "Select employee's role",
+          choices: roles
+        }
+      ]
+      const response = await inquirer.prompt(prompts);//inquirers user which role they want
+      const roleIndex = roles.indexOf(response.role);
+      console.log(roleResult[roleIndex])
+      console.log(roleIndex)
+      connection.query(
+        `INSERT INTO employees (first_name, last_name, role_id) VALUES ('${response.first_name}', '${response.last_name}', '${roleResult[roleIndex].id}')`,
+        function (err4, res) {
+          if (err4) {
+            throw err4;
+          }
+          console.log(`${response.first_name} ${response.last_name} successfully added as an employee.`);
+          employeesMenu();
+        }
+      )
+
+    })
 }
 
-function deleteEmployee(){
-  
+async function deleteEmployee() {
+  const query = `SELECT CONCAT(first_name, " ", last_name) as name, id FROM employees ORDER BY id`;
+  connection.query(query, async function (err, res) {
+      if (err) {
+        throw err;
+      }
+      const employees = res.map(a => a.name);
+      const response = await inquirer.prompt({
+        type: "list",
+        name: "employee",
+        message: "Which employee would you like to delete?",
+        choices: employees
+      })
+
+      const index = employees.indexOf(response.employee);
+
+      connection.query(`DELETE FROM employees WHERE id = '${res[index].id}'`, function (err2, res2) {
+        if (err2) {
+          throw err2;
+        }
+        console.log(`${response.employee} was successfully deleted.`);
+        employeesMenu();
+      });
+    })
 }
 
 async function rolesMenu() {
@@ -148,7 +214,7 @@ function viewAllRoles() {
   })
 }
 
-function addRoles() {
+function addRoles() {//asks what department you want the role in and then adds it
   const query = "SELECT * FROM departments";
   connection.query(query, async function (err, results) {
     if (err) {
@@ -173,7 +239,7 @@ function addRoles() {
         name: "department"
       }
     ];
-    const response = await inquirer.prompt(prompts)
+    const response = await inquirer.prompt(prompts);
     const index = departments.indexOf(response.department);
     const query1 = `INSERT INTO roles (title, salary, department_id) VALUES ('${response.role}', '${response.salary}', '${results[index].id}')`;
     connection.query(query1, function (err1, results1) {
