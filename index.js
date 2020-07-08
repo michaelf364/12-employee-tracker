@@ -354,7 +354,7 @@ function deleteDepartment() {
       if (err2) {
         throw err2;
       }
-      console.log("Department successfully deleted.");
+      console.log(`'${response.department}' successfully deleted.`);
       departmentsMenu();
     })
   })
